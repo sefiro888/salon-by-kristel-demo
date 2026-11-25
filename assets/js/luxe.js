@@ -29,7 +29,7 @@
     if (prog) prog.style.transform = 'scaleX(' + (h > 0 ? y / h : 0) + ')';
     if (toTop) toTop.classList.toggle('on', y > 700);
     var fab = $('.fab-reservar'); if (fab) fab.classList.toggle('on', y > 600);
-    var wa = $('.fab-wa'); if (wa) wa.classList.toggle('on', y > 500);
+    var wa = $('.fab-wa'); if (wa) wa.classList.toggle('on', y > 120);
     if (!reduce) parallax(y);
     ticking = false;
   }
@@ -281,6 +281,39 @@
     sw.forEach(function (b) { b.addEventListener('click', function () { setCover(b.dataset.c, true); }); });
     var q = new URLSearchParams(location.search).get('portada');
     setCover(q || store.get('sk-cover') || '1', !!q);
+  }
+
+  /* ---------- WhatsApp vivo: invitación según la sección ---------- */
+  var dock = $('.wa-dock');
+  if (dock) {
+    var tip = $('.wa-tip', dock), tipT = $('.wa-tip__t', dock), items = {}, cur = null, tShow, tHide, count = 0;
+    $$('.wa-tips li', dock).forEach(function (li) { items[li.dataset.k] = li; });
+    var pageKey = document.body.dataset.page || 'hola';
+    var ss = { get: function (k) { try { return sessionStorage.getItem(k); } catch (e) { return null; } }, set: function (k, v) { try { sessionStorage.setItem(k, v); } catch (e) {} } };
+    count = parseInt(ss.get('sk-wa-n') || '0', 10);
+    function hideTip() { clearTimeout(tHide); tip.classList.remove('on'); }
+    function showTip() {
+      if (ss.get('sk-wa-x') || count >= 5 || !items[cur] || cur === 'none') return;
+      tipT.textContent = items[cur].textContent; tip.classList.add('on'); count++; ss.set('sk-wa-n', String(count));
+      var f = $('.fab-wa', dock); if (f) { f.classList.remove('ring'); void f.offsetWidth; f.classList.add('ring'); }
+      clearTimeout(tHide); tHide = setTimeout(hideTip, 9000);
+    }
+    function setCur(k) {
+      if (!items[k]) k = items[pageKey] ? pageKey : 'hola';
+      if (k === cur) return;
+      cur = k; hideTip(); clearTimeout(tShow);
+      var href = dock.dataset.wa + '?text=' + encodeURIComponent(items[k].dataset.m);
+      $$('.js-wa').forEach(function (a) { a.href = href; });
+      tShow = setTimeout(showTip, count ? 3500 : 6000);
+    }
+    $('.wa-tip__x', dock).addEventListener('click', function () { ss.set('sk-wa-x', '1'); hideTip(); });
+    setCur(pageKey);
+    if ('IntersectionObserver' in w) {
+      var io = new IntersectionObserver(function (es) {
+        es.forEach(function (e) { if (e.isIntersecting) setCur(e.target.dataset.tip || pageKey); });
+      }, { rootMargin: '-45% 0px -45% 0px' });
+      $$('main section').forEach(function (s) { io.observe(s); });
+    }
   }
 
   var y = $('[data-year]'); if (y) y.textContent = new Date().getFullYear();
