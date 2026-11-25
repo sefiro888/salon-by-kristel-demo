@@ -271,30 +271,33 @@
   /* ---------- portadas conmutables (inicio) ---------- */
   var hero = $('.hero--multi');
   if (hero) {
-    var sw = $$('.cover-switch button', hero), hv = $('.hero__video', hero), ba = $('.cv-ba', hero), sets = $$('.ba__set', ba), dots = $$('.ba__dots button', ba), baIdx = 0, baTimer = null, vidLoaded = false;
-    function setPos(v) { v = Math.max(8, Math.min(92, v)); ba.style.setProperty('--pos', v); var h = $('.ba__handle', ba); if (h) h.setAttribute('aria-valuenow', Math.round(v)); }
-    function showSet(i) { baIdx = (i + sets.length) % sets.length; sets.forEach(function (s, k) { s.classList.toggle('on', k === baIdx); }); dots.forEach(function (d, k) { d.classList.toggle('on', k === baIdx); }); }
-    function baDemo() { if (reduce) return; var t0 = performance.now(), seq = [50, 28, 72, 50]; (function st(t) { var k = (t - t0) / 3200; if (k >= 1 || hero.dataset.cover !== '4') return; var i = Math.min(2, Math.floor(k * 3)), f = k * 3 - i, e = f < .5 ? 2 * f * f : 1 - Math.pow(-2 * f + 2, 2) / 2; setPos(seq[i] + (seq[i + 1] - seq[i]) * e); requestAnimationFrame(st); })(t0); }
-    function baAuto(on) { clearInterval(baTimer); if (on && !reduce) baTimer = setInterval(function () { showSet(baIdx + 1); setPos(50); }, 9000); }
+    var sw = $$('.cover-switch button', hero), hv = $('.hero__video', hero), vidLoaded = false;
+    var car = $('.car', hero), slides = $$('.car__s', car), cdots = $$('.car__dots button', car), cnum = $('.car__n', car), ci = 0, ct = null;
+    function showSlide(i) {
+      ci = (i + slides.length) % slides.length;
+      slides.forEach(function (s, k) { s.classList.toggle('on', k === ci); });
+      cdots.forEach(function (d, k) { d.classList.toggle('on', k === ci); });
+      cnum.textContent = ('0' + (ci + 1)).slice(-2) + ' / 0' + slides.length;
+    }
+    function carAuto(on) { clearInterval(ct); if (on && !reduce) ct = setInterval(function () { showSlide(ci + 1); }, 4200); }
     function setCover(n, save) {
-      n = String(n); if (!/^[1-5]$/.test(n)) n = '1';
+      n = String(n); if (!/^[1-7]$/.test(n)) n = '1';
       hero.dataset.cover = n;
       sw.forEach(function (b) { b.setAttribute('aria-pressed', b.dataset.c === n ? 'true' : 'false'); });
       w.__forceSolid = (n === '3'); onScroll();
-      if (n === '5' && hv) { if (!vidLoaded) { vidLoaded = true; hv.preload = 'auto'; hv.src = BASE + hv.dataset.src; hv.load(); hv.addEventListener('canplay', function () { hv.classList.add('on'); }, { once: true }); } if (!reduce) hv.play().catch(function () {}); } else if (hv) { hv.pause(); }
-      if (n === '4') { setPos(50); baDemo(); baAuto(true); } else baAuto(false);
+      if (n === '7' && hv) {
+        if (!vidLoaded) { vidLoaded = true; hv.preload = 'auto'; hv.src = BASE + hv.dataset.src; hv.load(); hv.addEventListener('canplay', function () { hv.classList.add('on'); }, { once: true }); }
+        if (!reduce) hv.play().catch(function () {});
+      } else if (hv) { hv.pause(); }
+      carAuto(n === '5');
       if (save) store.set('sk-cover', n);
     }
     sw.forEach(function (b) { b.addEventListener('click', function () { setCover(b.dataset.c, true); }); });
-    dots.forEach(function (dd, k) { dd.addEventListener('click', function (e) { e.stopPropagation(); showSet(k); setPos(50); baAuto(true); }); });
-    var drag = false;
-    function posFrom(e) { var r = hero.getBoundingClientRect(); setPos(((e.clientX - r.left) / r.width) * 100); }
-    hero.addEventListener('pointerdown', function (e) { if (hero.dataset.cover !== '4' || e.target.closest('a,button.cover-switch,.cover-switch,.ba__dots')) return; drag = true; hero.setPointerCapture && hero.setPointerCapture(e.pointerId); posFrom(e); baAuto(false); });
-    hero.addEventListener('pointermove', function (e) { if (drag) posFrom(e); });
-    hero.addEventListener('pointerup', function () { if (drag) { drag = false; baAuto(true); } });
-    hero.addEventListener('pointercancel', function () { drag = false; });
-    var hdl = $('.ba__handle', ba); if (hdl) hdl.addEventListener('keydown', function (e) { var v = parseFloat(ba.style.getPropertyValue('--pos') || 50); if (e.key === 'ArrowLeft') setPos(v - 4); if (e.key === 'ArrowRight') setPos(v + 4); });
-    if ('IntersectionObserver' in w) new IntersectionObserver(function (es) { if (!es[0].isIntersecting) { if (hv) hv.pause(); baAuto(false); } else { if (hero.dataset.cover === '5' && hv && !reduce) hv.play().catch(function () {}); if (hero.dataset.cover === '4') baAuto(true); } }, { threshold: .05 }).observe(hero);
+    cdots.forEach(function (dd, k) { dd.addEventListener('click', function () { showSlide(k); carAuto(true); }); });
+    if ('IntersectionObserver' in w) new IntersectionObserver(function (es) {
+      if (!es[0].isIntersecting) { if (hv) hv.pause(); carAuto(false); }
+      else { if (hero.dataset.cover === '7' && hv && !reduce) hv.play().catch(function () {}); if (hero.dataset.cover === '5') carAuto(true); }
+    }, { threshold: .05 }).observe(hero);
     var q = new URLSearchParams(location.search).get('portada');
     setCover(q || store.get('sk-cover') || '1', !!q);
   }
