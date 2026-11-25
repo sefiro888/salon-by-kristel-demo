@@ -268,36 +268,17 @@
   });
 
 
-  /* ---------- portadas conmutables (inicio) ---------- */
+  /* ---------- portadas conmutables (inicio): 1 Foto · 2 Mosaico · 3 Salvia (valor interno 6) ---------- */
   var hero = $('.hero--multi');
   if (hero) {
-    var sw = $$('.cover-switch button', hero), hv = $('.hero__video', hero), vidLoaded = false;
-    var car = $('.car', hero), slides = $$('.car__s', car), cdots = $$('.car__dots button', car), cnum = $('.car__n', car), ci = 0, ct = null;
-    function showSlide(i) {
-      ci = (i + slides.length) % slides.length;
-      slides.forEach(function (s, k) { s.classList.toggle('on', k === ci); });
-      cdots.forEach(function (d, k) { d.classList.toggle('on', k === ci); });
-      cnum.textContent = ('0' + (ci + 1)).slice(-2) + ' / 0' + slides.length;
-    }
-    function carAuto(on) { clearInterval(ct); if (on && !reduce) ct = setInterval(function () { showSlide(ci + 1); }, 4200); }
+    var sw = $$('.cover-switch button', hero);
     function setCover(n, save) {
-      n = String(n); if (!/^[1-7]$/.test(n)) n = '1';
+      n = ({ '1': '1', '2': '2', '3': '6', '6': '6' })[String(n)] || '1';
       hero.dataset.cover = n;
       sw.forEach(function (b) { b.setAttribute('aria-pressed', b.dataset.c === n ? 'true' : 'false'); });
-      w.__forceSolid = (n === '3'); onScroll();
-      if (n === '7' && hv) {
-        if (!vidLoaded) { vidLoaded = true; hv.preload = 'auto'; hv.src = BASE + hv.dataset.src; hv.load(); hv.addEventListener('canplay', function () { hv.classList.add('on'); }, { once: true }); }
-        if (!reduce) hv.play().catch(function () {});
-      } else if (hv) { hv.pause(); }
-      carAuto(n === '5');
       if (save) store.set('sk-cover', n);
     }
     sw.forEach(function (b) { b.addEventListener('click', function () { setCover(b.dataset.c, true); }); });
-    cdots.forEach(function (dd, k) { dd.addEventListener('click', function () { showSlide(k); carAuto(true); }); });
-    if ('IntersectionObserver' in w) new IntersectionObserver(function (es) {
-      if (!es[0].isIntersecting) { if (hv) hv.pause(); carAuto(false); }
-      else { if (hero.dataset.cover === '7' && hv && !reduce) hv.play().catch(function () {}); if (hero.dataset.cover === '5') carAuto(true); }
-    }, { threshold: .05 }).observe(hero);
     var q = new URLSearchParams(location.search).get('portada');
     setCover(q || store.get('sk-cover') || '1', !!q);
   }
