@@ -55,9 +55,13 @@
   items.forEach(function (li) {
     var b = $('button', li), t;
     function open() { clearTimeout(t); closeAll(li); li.classList.add('open'); b.setAttribute('aria-expanded', 'true'); }
-    function close() { t = setTimeout(function () { li.classList.remove('open'); b.setAttribute('aria-expanded', 'false'); }, 160); }
+    function close() { clearTimeout(t); t = setTimeout(function () { li.classList.remove('open'); b.setAttribute('aria-expanded', 'false'); }, 420); }
     if (fine) { li.addEventListener('mouseenter', open); li.addEventListener('mouseleave', close); }
-    b.addEventListener('click', function () { li.classList.contains('open') ? (li.classList.remove('open'), b.setAttribute('aria-expanded', 'false')) : open(); });
+    b.addEventListener('click', function (e) {
+      /* ratón con hover: el menú ya se abre al pasar; el clic lleva a la página de servicios (no lo cierra). Teclado/táctil: abre y cierra */
+      if (fine && e.detail > 0) { w.location.href = 'servicios.html'; return; }
+      li.classList.contains('open') ? (li.classList.remove('open'), b.setAttribute('aria-expanded', 'false')) : open();
+    });
     $$('.mega__tab', li).forEach(function (tab) {
       function act() {
         $$('.mega__tab', li).forEach(function (x) { x.classList.toggle('on', x === tab); });
@@ -73,6 +77,8 @@
   function setMenu(on) { d.body.classList.toggle('menu-open', on); if (burger) { burger.setAttribute('aria-expanded', on); } d.body.style.overflow = on ? 'hidden' : ''; }
   if (burger) burger.addEventListener('click', function () { setMenu(!d.body.classList.contains('menu-open')); });
   $$('.m-menu a').forEach(function (a) { a.addEventListener('click', function () { setMenu(false); }); });
+  $$('.mm__det').forEach(function (dt) { dt.addEventListener('toggle', function () { $$('.mm__det').forEach(function (o) { if (o !== dt && dt.open) o.open = false; }); }); });
+  w.addEventListener('resize', function () { if (w.innerWidth > 980 && d.body.classList.contains('menu-open')) setMenu(false); });
 
   /* ---------- aparición al hacer scroll ---------- */
   var rvEls = $$('.rv,.rv-l,.rv-r,.img-reveal');
@@ -286,33 +292,33 @@
   /* ---------- WhatsApp vivo: invitación según la sección ---------- */
   var dock = $('.wa-dock');
   if (dock) {
-    var tip = $('.wa-tip', dock), tipT = $('.wa-tip__t', dock), items = {}, cur = null, tShow, tHide, count = 0;
-    $$('.wa-tips li', dock).forEach(function (li) { items[li.dataset.k] = li; });
+    var tip = $('.wa-tip', dock), tipT = $('.wa-tip__t', dock), waItems = {}, cur = null, tShow, tHide, count = 0;
+    $$('.wa-tips li', dock).forEach(function (li) { waItems[li.dataset.k] = li; });
     var pageKey = document.body.dataset.page || 'hola';
     var ss = { get: function (k) { try { return sessionStorage.getItem(k); } catch (e) { return null; } }, set: function (k, v) { try { sessionStorage.setItem(k, v); } catch (e) {} } };
     count = parseInt(ss.get('sk-wa-n') || '0', 10);
     function hideTip() { clearTimeout(tHide); tip.classList.remove('on'); }
     function showTip() {
-      if (ss.get('sk-wa-x') || count >= 5 || !items[cur] || cur === 'none') return;
-      tipT.textContent = items[cur].textContent; tip.classList.add('on'); count++; ss.set('sk-wa-n', String(count));
+      if (ss.get('sk-wa-x') || count >= 5 || !waItems[cur] || cur === 'none') return;
+      tipT.textContent = waItems[cur].textContent; tip.classList.add('on'); count++; ss.set('sk-wa-n', String(count));
       var f = $('.fab-wa', dock); if (f) { f.classList.remove('ring'); void f.offsetWidth; f.classList.add('ring'); }
       clearTimeout(tHide); tHide = setTimeout(hideTip, 9000);
     }
     function setCur(k) {
-      if (!items[k]) k = items[pageKey] ? pageKey : 'hola';
+      if (!waItems[k]) k = waItems[pageKey] ? pageKey : 'hola';
       if (k === cur) return;
       cur = k; hideTip(); clearTimeout(tShow);
-      var href = dock.dataset.wa + '?text=' + encodeURIComponent(items[k].dataset.m);
+      var href = dock.dataset.wa + '?text=' + encodeURIComponent(waItems[k].dataset.m);
       $$('.js-wa').forEach(function (a) { a.href = href; });
       tShow = setTimeout(showTip, count ? 3500 : 6000);
     }
     $('.wa-tip__x', dock).addEventListener('click', function () { ss.set('sk-wa-x', '1'); hideTip(); });
     setCur(pageKey);
     if ('IntersectionObserver' in w) {
-      var io = new IntersectionObserver(function (es) {
+      var waIo = new IntersectionObserver(function (es) {
         es.forEach(function (e) { if (e.isIntersecting) setCur(e.target.dataset.tip || pageKey); });
       }, { rootMargin: '-45% 0px -45% 0px' });
-      $$('main section').forEach(function (s) { io.observe(s); });
+      $$('main section').forEach(function (s) { waIo.observe(s); });
     }
   }
 
